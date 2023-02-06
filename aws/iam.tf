@@ -32,11 +32,11 @@ resource "aws_iam_role_policy_attachment" "opencti_ssm_attach" {
 }
 
 # S3
-data "aws_iam_policy" "s3readonly" {
-  arn = "arn:aws:iam::aws:policy/AmazonS3ReadOnlyAccess"
+data "aws_iam_policy" "s3full" {
+  arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
 }
 
 resource "aws_iam_role_policy_attachment" "opencti_readonly_attach" {
   role       = aws_iam_role.opencti_role.name
-  policy_arn = data.aws_iam_policy.s3readonly.arn
+  policy_arn = data.aws_iam_policy.s3full.arn
 }
