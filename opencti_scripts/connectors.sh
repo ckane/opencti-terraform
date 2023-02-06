@@ -106,6 +106,9 @@ do
   esac
 done
 
+echo "Skipping connectors for now"
+exit 0
+
 # Connectors
 opencti_dir="/opt/opencti"
 opencti_connector_dir="${opencti_dir}/connectors"

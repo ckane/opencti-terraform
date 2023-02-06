@@ -106,6 +106,10 @@ function update_apt_pkg {
   DEBIAN_FRONTEND=noninteractive apt-get -qq update
   quit_on_error "Checking packages"
 }
+function upgrade_apt_all {
+  DEBIAN_FRONTEND=noninteractive apt-get -qq -y dist-upgrade
+  quit_on_error "Checking packages"
+}
 
 # Function: check_apt_pkg
 # Checks if a package is installed and updates it. If the package is not installed, it is installed.
@@ -116,7 +120,7 @@ function check_apt_pkg {
   if [[ $(dpkg -l | grep $1) ]]
   then
     echo >&2 "$1 found, attempting upgrade: executing apt-get -y install --only-upgrade '$1''$2'";
-    DEBIAN_FRONTEND=noninteractive apt-get install --only-upgrade "$1""$2"
+    DEBIAN_FRONTEND=noninteractive apt-get -y install --only-upgrade "$1""$2"
     quit_on_error "Upgrading $1$2"
   else
     echo >&2 "$1 missing, attempting install: executing apt-get -y install '$1''$2'";
@@ -184,41 +188,7 @@ function disable_service {
 # ################
 # Define constants
 # ################
-
-# Check Ubuntu version for Python:
-# - 18 uses 3.6 (will install 3.7)
-# - 20 uses 3.8
-ubuntu_version=$(grep "Ubuntu " /etc/lsb-release | cut -d" " -f2 | cut -d\. -f1)
-if [[ ${ubuntu_version} == 18 ]]
-then
-  distro="bionic"
-  run_python="python3.7"
-elif [[ ${ubuntu_version} == 20 ]]
-then
-  # Using bionic since focal not avaialble yet for RabbitMQ
-  distro="bionic"
-  run_python="python3"
-elif [[ ${ubuntu_version} == 22 ]]
-then
-  # Using bionic since focal not avaialble yet for RabbitMQ
-  distro="bionic"
-  run_python="python3"
-else
-  quit_on_error echo "You are using an unsupported version of Ubuntu. Exiting."
-fi
-
-# TypeDB
-typedb_bin_version="2.9.0"
-typedb_console_version="2.11.1"
-typedb_core_all_version="2.11.1"
-typedb_core_server_version="2.11.1"
-
-# Redis
-redis_ver="7.0.5"
-
-# RabbitMQ
-rabbitmq_ver="3.10.5-1"
-rabbitmq_release_url="https://github.com/rabbitmq/signing-keys/releases/download/2.0/rabbitmq-release-signing-key.asc"
+opencti_docker_url="https://github.com/OpenCTI-Platform/docker.git"
 
 # OpenCTI
 # This has to be in email address format, otherwise the opencti-server service will freak out and not start correctly. - KTW
@@ -234,7 +204,7 @@ do
   esac
 done
 
-opencti_ver="5.3.17"
+opencti_ver="5.5.3"
 opencti_dir="/opt/opencti"
 opencti_worker_count=8
 
@@ -254,24 +224,13 @@ then
   log_section_heading "Entering script's root directory: ${script_pwd}"
 fi
 
-# Clean the slate: disable any service we will be messing with in this script. If you're looking through the install log and see errors here, it's fine; a lot of these aren't installed. This is just to be safe.
-log_section_heading "Disable existing services"
-for i in $(seq 1 $opencti_worker_count)
-do
-  disable_service "opencti-worker@$i"
-done
-disable_service 'opencti-server'
-disable_service 'elasticsearch'
-disable_service 'redis-server'
-disable_service 'rabbitmq-server'
-disable_service 'typedb'
-
 # The VMs we're running are not that big and we're going to quickly fill the system log with our work (and especially the connectors). This will max out the logs at 100M.
 echo "SystemMaxUse=100M" >> /etc/systemd/journald.conf
 
 # Ensure required packages are installed at latest (or specified) version. Repositories were updated in the wrapper script.
 log_section_heading "Installing and updating required packages"
 update_apt_pkg
+upgrade_apt_all
 check_apt_pkg 'apt-transport-https'
 check_apt_pkg 'curl'
 check_apt_pkg 'git'
@@ -281,316 +240,75 @@ check_apt_pkg 'software-properties-common'
 check_apt_pkg 'tar'
 check_apt_pkg 'wget'
 
-## NodeJS
-log_section_heading "NodeJS"
-check_apt_pkg 'nodejs'
-check_apt_pkg 'npm'
-npm install -g n
-n lts
-sed -i 's|PATH.*|'"${PATH}:/usr/local/bin/node"'|g' /etc/environment
-export PATH="$PATH:/usr/local/bin/node"
-npm rebuild
-
-## Yarn
-log_section_heading "Yarn"
-curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add -
-echo "deb https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list
-update_apt_pkg
-check_apt_pkg 'yarn'
-
-## Python
-log_section_heading "Python"
-check_apt_pkg "${run_python}"
-check_apt_pkg "python3-pip"
-${run_python} -m pip install --upgrade pip
-${run_python} -m pip -q install --ignore-installed PyYAML
-
-## TypeDB
-log_section_heading "TypeDB"
-sudo apt-key adv --keyserver keyserver.ubuntu.com --recv 8F3DA4B5E9AEF44C
-sudo add-apt-repository 'deb [ arch=all ] https://repo.vaticle.com/repository/apt/ trusty main'
-update_apt_pkg
-# apt-get install -y grakn-console=2.0.0-alpha-3 # Required dependency
-# apt-get install -y grakn-core-all
-# check_apt_pkg 'grakn-bin' "=${grakn_bin_version}"
-# check_apt_pkg 'grakn-core-server' "=${grakn_core_server_version}"
-# check_apt_pkg 'grakn-console' "=${grakn_console_version}"
-check_apt_pkg 'typedb-bin' "=${typedb_bin_version}"
-check_apt_pkg 'typedb-server' "=${typedb_core_all_version}"
-check_apt_pkg 'typedb-all' "=${typedb_core_all_version}"
-
-### Create systemd unit file for TypeDB
-cat <<EOT > /etc/systemd/system/typedb.service
-[Unit]
-Description=TypeDB Server daemon
-After=network.target
-[Service]
-Type=simple
-ExecStart=/usr/local/bin/typedb server
-#ExecStop=/usr/local/bin/typedb server stop
-#ExecReload=/usr/local/bin/typedb server stop && /usr/local/bin/typedb server start
-#RemainAfterExit=yes
-[Install]
-WantedBy=multi-user.target
-EOT
-systemctl daemon-reload
-enable_service 'typedb'
-
-## Elasticsearch
-log_section_heading "Elasticsearch"
-echo "Setting up logrotate for Elasticsearch"
-# rotate 20 logs at 50M means a maximum of 1GB Elasticsearch logs.
-cat <<EOT > /etc/logrotate.d/elasticsearch
-/var/log/elasticsearch/*.log {
-  daily
-  rotate 20
-  size 50M
-  copytruncate
-  compress
-  delaycompress
-  missingok
-  notifempty
-  create 644 elasticsearch elasticsearch
-}
-EOT
-wget -qO - 'https://artifacts.elastic.co/GPG-KEY-elasticsearch' | apt-key add -
-add-apt-repository "deb https://artifacts.elastic.co/packages/8.x/apt stable main"
-update_apt_pkg
-check_apt_pkg 'elasticsearch'
-sed -i 's|xpack.security.enabled: true|xpack.security.enabled: false|' /etc/elasticsearch/elasticsearch.yml
-sed -i 's|xpack.security.enrollment.enabled: true|xpack.security.enrollment.enabled: false|' /etc/elasticsearch/elasticsearch.yml
-sed -i 's|^  enabled: true|  enabled: false|' /etc/elasticsearch/elasticsearch.yml
-enable_service 'elasticsearch'
-
-## Redis
-log_section_heading "Redis"
-update_apt_pkg
-check_apt_pkg 'gcc'
-check_apt_pkg 'build-essential'
-check_apt_pkg 'libsystemd-dev'  # required for systemd notify to work
-check_apt_pkg 'pkg-config'
-
-if [[ ! -f "/usr/local/bin/redis-server" ]]
-then
-  wget --quiet "http://download.redis.io/releases/redis-${redis_ver}.tar.gz"
-  tar xzf redis-${redis_ver}.tar.gz
-  cd redis-${redis_ver}
-  make -s
-  quit_on_error "Building Redis ${redis_ver}..."
-  make -s install
-  quit_on_error "Installing Redis ${redis_ver}..."
-  cd ..
-fi
-
-if [[ ! $(id redis) ]]
-then
-  adduser --system --group --no-create-home redis
-  usermod -L redis
-fi
-
-if [[ ! -d "/var/lib/redis/" ]]
-then
-  mkdir -p "/var/lib/redis"
-  chown redis:redis "/var/lib/redis"
-  chmod ug+rwX "/var/lib/redis"
-fi
-
-if [[ ! -d "/etc/redis/" ]]
-then
-  mkdir -p "/etc/redis/"
-  chown -R redis:redis "/etc/redis/"
-fi
-
-if [[ ! -f "/etc/redis/redis.conf" ]]
-then
-  cp "redis-${redis_ver}/redis.conf" "/etc/redis/redis.conf"
-  sed -i 's/^\#\ supervised\ .*$/supervised auto/' "/etc/redis/redis.conf"
-  chown redis:redis "/etc/redis/redis.conf"
-fi
-
-if [[ ! -f "/etc/default/redis-server" ]]
-then
-  touch "/etc/default/redis-server"
-  echo 'ULIMIT=65536' >> "/etc/default/redis-server"
-fi
-
-if [[ ! -f "/etc/systemd/system/redis-server.service" ]]
-then
-cat > /etc/systemd/system/redis-server.service <<- EOT
-[Unit]
-Description=Redis persistent key-value storage
-After=network.target
-[Service]
-Type=notify
-ExecStart=/usr/local/bin/redis-server /etc/redis/redis.conf
-ExecStop=/usr/local/bin/redis-cli -p 6379 shutdown
-ExecReload=/bin/kill -USR2 \$MAINPID
-TimeoutStartSec=900
-TimeoutStopSec=10
-Restart=on-failure
-[Install]
-WantedBy=multi-user.target
-EOT
-  systemctl daemon-reload
-fi
-
-enable_service 'redis-server'
-
-## RabbitMQ
-log_section_heading "RabbitMQ"
-curl -fsSL "${rabbitmq_release_url}" | apt-key add -
-curl -fsSL https://packagecloud.io/rabbitmq/rabbitmq-server/gpgkey | sudo gpg --dearmor | sudo tee /usr/share/keyrings/rabbitmq_rabbitmq-server-archive-keyring.gpg
-curl -1sLf "https://keys.openpgp.org/vks/v1/by-fingerprint/0A9AF2115F4687BD29803A206B73A36E6026DFCA" | sudo gpg --dearmor | sudo tee /usr/share/keyrings/com.rabbitmq.team.gpg
-curl -1sLf https://dl.cloudsmith.io/public/rabbitmq/rabbitmq-erlang/gpg.E495BB49CC4BBE5B.key | sudo gpg --dearmor | sudo tee /usr/share/keyrings/io.cloudsmith.rabbitmq.E495BB49CC4BBE5B.gpg
-curl -1sLf https://dl.cloudsmith.io/public/rabbitmq/rabbitmq-server/gpg.9F4587F226208342.key | sudo gpg --dearmor | sudo tee /usr/share/keyrings/io.cloudsmith.rabbitmq.9F4587F226208342.gpg
-tee /etc/apt/sources.list.d/rabbitmq_rabbitmq-server.list <<EOT
-## Installs the latest Erlang 22.x release.
-## Change component to "erlang-21.x" to install the latest 21.x version.
-## "bionic" as distribution name should work for any later Ubuntu or Debian release.
-## See the release to distribution mapping table in RabbitMQ doc guides to learn more.
-## deb [trusted=yes] https://dl.bintray.com/rabbitmq-erlang/debian ${distro} erlang
-## deb [trusted=yes] https://dl.bintray.com/rabbitmq/debian ${distro} main
-deb [signed-by=/usr/share/keyrings/io.cloudsmith.rabbitmq.E495BB49CC4BBE5B.gpg] https://dl.cloudsmith.io/public/rabbitmq/rabbitmq-erlang/deb/ubuntu bionic main
-deb-src [signed-by=/usr/share/keyrings/io.cloudsmith.rabbitmq.E495BB49CC4BBE5B.gpg] https://dl.cloudsmith.io/public/rabbitmq/rabbitmq-erlang/deb/ubuntu bionic main
-deb [signed-by=/usr/share/keyrings/io.cloudsmith.rabbitmq.9F4587F226208342.gpg] https://dl.cloudsmith.io/public/rabbitmq/rabbitmq-server/deb/ubuntu bionic main
-deb-src [signed-by=/usr/share/keyrings/io.cloudsmith.rabbitmq.9F4587F226208342.gpg] https://dl.cloudsmith.io/public/rabbitmq/rabbitmq-server/deb/ubuntu bionic main
-deb [signed-by=/usr/share/keyrings/rabbitmq_rabbitmq-server-archive-keyring.gpg] https://packagecloud.io/rabbitmq/rabbitmq-server/ubuntu focal main
-deb-src [signed-by=/usr/share/keyrings/rabbitmq_rabbitmq-server-archive-keyring.gpg] https://packagecloud.io/rabbitmq/rabbitmq-server/ubuntu focal main
-EOT
+# Installing docker repos
+sudo mkdir -p /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
 update_apt_pkg
-check_apt_pkg 'rabbitmq-server' "=${rabbitmq_ver}"
-enable_service 'rabbitmq-server'
-
-# Set RabbitMQ environment variables
-RRMQUNAME="rabbitadmin"
-
-# rabbitmq doesn't like '/'
-RRMQPASS="$(openssl rand -base64 25 | tr -d '/' | tr -d '+')"
-
-# get the info once
-RMQ_user_list="$(rabbitmqctl list_users)"
-if grep 'guest' <<< "${RMQ_user_list}"
-then
-  rabbitmqctl delete_user guest
-fi
-
-if ! grep "${RRMQUNAME}" <<< "${RMQ_user_list}"
-then
-  rabbitmqctl add_user "${RRMQUNAME}" "${RRMQPASS}"
-else
-  rabbitmqctl change_password "${RRMQUNAME}" "${RRMQPASS}"
-fi
-rabbitmqctl set_user_tags "${RRMQUNAME}" administrator
-rabbitmqctl set_permissions -p / "${RRMQUNAME}" ".*" ".*" ".*"
-rabbitmqctl start_app
-rabbitmq-plugins enable rabbitmq_management
-
-RMQ_user_list="$(rabbitmqctl list_users)"
-echo -e "${RMQ_user_list}"
-
-# Check status of services
-log_section_heading "Checking service statuses"
-check_service 'elasticsearch'
-check_service 'typedb'
-check_service 'rabbitmq-server'
-check_service 'redis-server'
+check_apt_pkg 'docker-ce'
+check_apt_pkg 'docker-ce-cli'
+check_apt_pkg 'containerd.io'
+check_apt_pkg 'docker-compose-plugin'
 
 # OpenCTI
 log_section_heading "OpenCTI package installation"
 
-echo "OpenCTI: download tarball"
-wget --quiet -O opencti-release-${opencti_ver}.tar.gz "https://github.com/OpenCTI-Platform/opencti/releases/download/${opencti_ver}/opencti-release-${opencti_ver}.tar.gz"
-tar -xzf "opencti-release-${opencti_ver}.tar.gz" --directory "/opt/"
-rm "opencti-release-${opencti_ver}.tar.gz"
-
-echo "Changing owner of ${opencti_dir} to:" $(whoami)":"$(id -gn)
-chown -R $(whoami):$(id -gn) "${opencti_dir}"
-
-echo "OpenCTI: Installing Python dependencies"
-${run_python} -m pip -q install -r "${opencti_dir}/connectors/internal-export-file/export-file-stix/src/requirements.txt"
-${run_python} -m pip -q install -r "${opencti_dir}/connectors/internal-import-file/import-file-stix/src/requirements.txt"
-${run_python} -m pip -q install -r "${opencti_dir}/src/python/requirements.txt"
-${run_python} -m pip -q install -r "${opencti_dir}/worker/requirements.txt"
-${run_python} -m pip install requests==2.25.0
+echo "OpenCTI: Cloning Docker Repo"
+mkdir -p "${opencti_dir}"
+git clone https://github.com/OpenCTI-Platform/docker.git "${opencti_dir}/opencti-docker"
+cd "${opencti_dir}/opencti-docker"
 
 echo "OpenCTI: Edit configs"
 ## Setting: .app.admin.password
 # RADMINPASS="opencti"
 RADMINPASS="$(openssl rand -base64 25 | tr -d '/')"
+MINIOPASS="$(openssl rand -base64 25 | tr -d '/')"
+RABBITPASS="$(openssl rand -base64 25 | tr -d '/')"
 ## Setting: .app.admin.token
 RADMINTOKEN="$(uuidgen -r | tr -d '\n' | tr '[:upper:]' '[:lower:]')"
 
-echo "OpenCTI: Copy proper configs"
-# Take default configuration and fill in our values.
-cat ${opencti_dir}/config/default.json | jq ".app.admin.email=\"${opencti_email}\" | .app.admin.password=\"${RADMINPASS}\" | .app.admin.token=\"${RADMINTOKEN}\" | .minio.bucket_name=\"${storage_bucket}\" | .minio.endpoint=\"s3.amazonaws.com\" | .minio.port=443 | .minio.use_ssl=true | .minio.access_key=\"\" | .minio.secret_key=\"\" | .minio.use_aws_role=true | .rabbitmq.username=\"${RRMQUNAME}\" | .rabbitmq.password=\"${RRMQPASS}\"" > ${opencti_dir}/config/production.json
+cat > "${opencti_dir}/opencti-docker/.env" << END_DOT_ENV
+OPENCTI_ADMIN_EMAIL=${opencti_email}
+OPENCTI_ADMIN_PASSWORD=${RADMINPASS}
+OPENCTI_ADMIN_TOKEN=${RADMINTOKEN}
+OPENCTI_BASE_URL=http://localhost:8080
+MINIO_ROOT_USER=opencti
+MINIO_ROOT_PASSWORD=${MINIOPASS}
+RABBITMQ_DEFAULT_USER=opencti
+RABBITMQ_DEFAULT_PASS=${RABBITPASS}
+CONNECTOR_EXPORT_FILE_STIX_ID=dd817c8b-abae-460a-9ebc-97b1551e70e6
+CONNECTOR_EXPORT_FILE_CSV_ID=7ba187fb-fde8-4063-92b5-c3da34060dd7
+CONNECTOR_EXPORT_FILE_TXT_ID=ca715d9c-bd64-4351-91db-33a8d728a58b
+CONNECTOR_IMPORT_FILE_STIX_ID=72327164-0b35-482b-b5d6-a5a3f76b845f
+CONNECTOR_IMPORT_DOCUMENT_ID=c3970f8a-ce4b-4497-a381-20b7256f56f0
+SMTP_HOSTNAME=localhost
+ELASTIC_MEMORY_SIZE=4G
+END_DOT_ENV
 
-echo "OpenCTI: Create unit file"
-cat > /etc/systemd/system/opencti-server.service <<- EOT
-[Unit]
-Description=OpenCTI Server daemon
-After=network.target
-[Service]
-Type=simple
-WorkingDirectory=${opencti_dir}/
-ExecStart=/usr/bin/yarn serv
-ExecReload=/bin/kill -s HUP \$MAINPID
-ExecStop=/bin/kill -s TERM \$MAINPID
-Restart=on-failure
-[Install]
-WantedBy=multi-user.target
-EOT
+echo "Setting vm.max_map_count to 1048575"
+sysctl -w vm.max_map_count=1048575
+echo vm.max_map_count=1048575 >> /etc/sysctl.conf
 
-echo "OpenCTI: Copy worker configuration"
-cp "$opencti_dir/worker/config.yml.sample" "$opencti_dir/worker/config.yml"
+echo "OpenCTI: Cloning Connectors Repo"
+git clone https://github.com/OpenCTI-Platform/connectors.git "${opencti_dir}/opencti-connectors"
 
-echo "OpenCTI: Edit worker configuration"
-sed -i'' -e 's/token: '"'"'ChangeMe'"'"'/token: '"${RADMINTOKEN}"'/g' "$opencti_dir/worker/config.yml"
+connector_containers="internal-import-file/import-document internal-import-file/import-file-stix"
+connector_containers="${connector_containers} internal-export-file/export-file-stix"
+connector_containers="${connector_containers} internal-export-file/export-file-csv"
+connector_containers="${connector_containers} internal-export-file/export-file-txt"
 
-# Switch to port 4000
-sed -i "s/'http:\/\/localhost:8080'/'http:\/\/localhost:4000'/" "$opencti_dir/worker/config.yml"
-
-echo "OpenCTI: create unit file"
-cat > /etc/systemd/system/opencti-worker@.service <<- EOT
-[Unit]
-Description=OpenCTI Worker daemon %i
-After=network.target opencti-server.service
-StartLimitBurst=30
-StartLimitInterval=0
-
-[Service]
-RestartSec=20
-TimeoutStartSec=600
-Type=simple
-WorkingDirectory=${opencti_dir}/worker/
-ExecStart=/usr/bin/${run_python} "${opencti_dir}/worker/worker.py"
-ExecReload=/bin/kill -s HUP \$MAINPID
-ExecStop=/bin/kill -s TERM \$MAINPID
-PrivateTmp=true
-Restart=always
-[Install]
-WantedBy=multi-user.target
-EOT
-
-echo "OpenCTI: daemon-reload"
-systemctl daemon-reload
-
-## Remove requirement for node v12-13 since we are installing v14; making it >= 12.
-sed -i 's/"node": ">= 12.* < 13.0.0"/"node": ">= 12"/' $opencti_dir/package.json
-
-echo "OpenCTI: Starting services - sleep 30 to wait for services to boot"
-enable_service 'opencti-server'
-sleep 30  # waiting for opencti to check all services
-check_service 'opencti-server'
-
-echo "OpenCTI: Enabling workers"
-for i in $(seq 1 $opencti_worker_count)
-do
-  sleep 5
-  enable_service "opencti-worker@$i"
-  sleep 5
-  check_service "opencti-worker@$i"
+for cdir in ${connector_containers}; do
+    cd "${opencti_dir}/opencti-connectors/${cdir}"
+    docker build -t "opencti/connector-$(basename $cdir):5.5.3" .
 done
+
+echo "Starting Docker"
+cd "${opencti_dir}/opencti-docker"
+set -a; source .env
+docker compose up --wait
 
 # Clean up packages
 log_section_heading "Clean up packages"
