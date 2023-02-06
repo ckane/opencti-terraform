@@ -271,6 +271,7 @@ RABBITPASS="$(openssl rand -base64 25 | tr -d '/')"
 RADMINTOKEN="$(uuidgen -r | tr -d '\n' | tr '[:upper:]' '[:lower:]')"
 OCTIID="$(uuidgen -r | tr -d '\n' | tr '[:upper:]' '[:lower:]')"
 MITREID="$(uuidgen -r | tr -d '\n' | tr '[:upper:]' '[:lower:]')"
+DISARMID="$(uuidgen -r | tr -d '\n' | tr '[:upper:]' '[:lower:]')"
 
 cat > "${opencti_dir}/opencti-docker/.env" << END_DOT_ENV
 OPENCTI_ADMIN_EMAIL=${opencti_email}
@@ -288,6 +289,7 @@ CONNECTOR_IMPORT_FILE_STIX_ID=72327164-0b35-482b-b5d6-a5a3f76b845f
 CONNECTOR_IMPORT_DOCUMENT_ID=c3970f8a-ce4b-4497-a381-20b7256f56f0
 CONNECTOR_OPENCTI_ID=${OCTIID}
 CONNECTOR_MITRE_ID=${MITREID}
+CONNECTOR_DISARM_ID=${DISARMID}
 SMTP_HOSTNAME=localhost
 ELASTIC_MEMORY_SIZE=4G
 END_DOT_ENV
@@ -305,6 +307,7 @@ connector_containers="${connector_containers} internal-export-file/export-file-c
 connector_containers="${connector_containers} internal-export-file/export-file-txt"
 connector_containers="${connector_containers} external-import/opencti"
 connector_containers="${connector_containers} external-import/mitre"
+connector_containers="${connector_containers} external-import/disarm-framework"
 
 for cdir in ${connector_containers}; do
     cd "${opencti_dir}/opencti-connectors/${cdir}"
