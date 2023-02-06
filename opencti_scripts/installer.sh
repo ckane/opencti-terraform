@@ -275,6 +275,7 @@ DISARMID="$(uuidgen -r | tr -d '\n' | tr '[:upper:]' '[:lower:]')"
 CISAID="$(uuidgen -r | tr -d '\n' | tr '[:upper:]' '[:lower:]')"
 CVEID="$(uuidgen -r | tr -d '\n' | tr '[:upper:]' '[:lower:]')"
 MALPEDIAID="$(uuidgen -r | tr -d '\n' | tr '[:upper:]' '[:lower:]')"
+CCTRACKERID="$(uuidgen -r | tr -d '\n' | tr '[:upper:]' '[:lower:]')"
 
 cat > "${opencti_dir}/opencti-docker/.env" << END_DOT_ENV
 OPENCTI_ADMIN_EMAIL=${opencti_email}
@@ -296,6 +297,7 @@ CONNECTOR_DISARM_ID=${DISARMID}
 CONNECTOR_CISA_VULNS_ID=${CISAID}
 CONNECTOR_CVE_ID=${CVEID}
 CONNECTOR_MALPEDIA_ID=${MALPEDIAID}
+CONNECTOR_CCTRACKER_ID=${CCTRACKERID}
 SMTP_HOSTNAME=localhost
 ELASTIC_MEMORY_SIZE=4G
 END_DOT_ENV
@@ -317,6 +319,7 @@ connector_containers="${connector_containers} external-import/disarm-framework"
 connector_containers="${connector_containers} external-import/cisa-known-exploited-vulnerabilities"
 connector_containers="${connector_containers} external-import/cve"
 connector_containers="${connector_containers} external-import/malpedia"
+connector_containers="${connector_containers} external-import/cybercrime-tracker"
 
 for cdir in ${connector_containers}; do
     cd "${opencti_dir}/opencti-connectors/${cdir}"
