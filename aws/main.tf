@@ -17,7 +17,7 @@ terraform {
 
 # These variables aren't meant to be changed by the end user.
 locals {
-  ami_id                         = "ami-0074ee617a234808d" # Ubuntu 20.04 LTS
+  ami_id                         = "ami-070650c005cce4203" # Ubuntu 22.04 LTS arm
   opencti_dir                    = "/opt/opencti"
   opencti_install_script_name    = "opencti-installer.sh"
   opencti_connectors_script_name = "opencti-connectors.sh"

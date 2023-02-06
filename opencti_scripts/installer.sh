@@ -236,7 +236,7 @@ done
 
 opencti_ver="5.3.17"
 opencti_dir="/opt/opencti"
-opencti_worker_count=4
+opencti_worker_count=8
 
 # ###########
 # Main script
