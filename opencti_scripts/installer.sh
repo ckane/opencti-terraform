@@ -258,7 +258,7 @@ log_section_heading "OpenCTI package installation"
 
 echo "OpenCTI: Cloning Docker Repo"
 mkdir -p "${opencti_dir}"
-git clone https://github.com/OpenCTI-Platform/docker.git "${opencti_dir}/opencti-docker"
+git clone -b tf-main https://github.com/ckane/opencti-docker.git "${opencti_dir}/opencti-docker"
 cd "${opencti_dir}/opencti-docker"
 
 echo "OpenCTI: Edit configs"
