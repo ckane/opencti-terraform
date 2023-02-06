@@ -4,15 +4,9 @@ provider "aws" {
   profile                 = "default"
 }
 
-# Store Terraform state in S3
 terraform {
-  backend "s3" {
-    # The bucket name is a variable defined in `terraform.tfvars` (as `storage_bucket`), but variables are not allowed in this block. If you change this, you will need to change that.
-    bucket = "opencti-storage"
-    key    = "terraform.tfstate"
-    # Again, no variable interpolation in this block so make sure this matches the region defined in `terraform.tfvars`. Default `us-east-1`.
-    region = "us-east-1"
-  }
+    backend "local" {
+    }
 }
 
 # These variables aren't meant to be changed by the end user.
