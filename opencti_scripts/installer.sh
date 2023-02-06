@@ -269,6 +269,7 @@ MINIOPASS="$(openssl rand -base64 25 | tr -d '/')"
 RABBITPASS="$(openssl rand -base64 25 | tr -d '/')"
 ## Setting: .app.admin.token
 RADMINTOKEN="$(uuidgen -r | tr -d '\n' | tr '[:upper:]' '[:lower:]')"
+OCTIID="$(uuidgen -r | tr -d '\n' | tr '[:upper:]' '[:lower:]')"
 
 cat > "${opencti_dir}/opencti-docker/.env" << END_DOT_ENV
 OPENCTI_ADMIN_EMAIL=${opencti_email}
@@ -284,6 +285,7 @@ CONNECTOR_EXPORT_FILE_CSV_ID=7ba187fb-fde8-4063-92b5-c3da34060dd7
 CONNECTOR_EXPORT_FILE_TXT_ID=ca715d9c-bd64-4351-91db-33a8d728a58b
 CONNECTOR_IMPORT_FILE_STIX_ID=72327164-0b35-482b-b5d6-a5a3f76b845f
 CONNECTOR_IMPORT_DOCUMENT_ID=c3970f8a-ce4b-4497-a381-20b7256f56f0
+CONNECTOR_OPENCTI_ID=${OCTIID}
 SMTP_HOSTNAME=localhost
 ELASTIC_MEMORY_SIZE=4G
 END_DOT_ENV
@@ -299,6 +301,7 @@ connector_containers="internal-import-file/import-document internal-import-file/
 connector_containers="${connector_containers} internal-export-file/export-file-stix"
 connector_containers="${connector_containers} internal-export-file/export-file-csv"
 connector_containers="${connector_containers} internal-export-file/export-file-txt"
+connector_containers="${connector_containers} external-import/opencti"
 
 for cdir in ${connector_containers}; do
     cd "${opencti_dir}/opencti-connectors/${cdir}"
