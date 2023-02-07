@@ -5,8 +5,8 @@ resource "aws_security_group" "opencti_sg" {
 
   ingress {
     description = "Allow access to application on port 4000"
-    from_port   = 4000
-    to_port     = 4000
+    from_port   = 8080
+    to_port     = 8080
     protocol    = "tcp"
     cidr_blocks = var.allowed_ips_application
   }

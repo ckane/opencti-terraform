@@ -1,5 +1,5 @@
 variable "allowed_ips_application" {
-  description = "List of IP addresses allowed to access application on port 4000 of public IP. Default is all IPs."
+  description = "List of IP addresses allowed to access application on port 8080 of public IP. Default is all IPs."
   type        = list(string)
   default     = ["0.0.0.0/0"]
 }
