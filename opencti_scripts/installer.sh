@@ -282,6 +282,7 @@ THREATFOXID="$(uuidgen -r | tr -d '\n' | tr '[:upper:]' '[:lower:]')"
 CRYPTOLAEMUSID="$(uuidgen -r | tr -d '\n' | tr '[:upper:]' '[:lower:]')"
 URLHAUSRECENTSID="$(uuidgen -r | tr -d '\n' | tr '[:upper:]' '[:lower:]')"
 URLHAUSID="$(uuidgen -r | tr -d '\n' | tr '[:upper:]' '[:lower:]')"
+VALHALLAID="$(uuidgen -r | tr -d '\n' | tr '[:upper:]' '[:lower:]')"
 
 cat > "${opencti_dir}/opencti-docker/.env" << END_DOT_ENV
 OPENCTI_ADMIN_EMAIL=${opencti_email}
@@ -310,6 +311,7 @@ CONNECTOR_MISP_FEED_THREATFOX_ID=${THREATFOXID}
 CONNECTOR_CRYPTOLAEMUS_ID=${CRYPTOLAEMUSID}
 CONNECTOR_URLHAUS_RECENTS_ID=${URLHAUSRECENTSID}
 CONNECTOR_URLHAUS_ID=${URLHAUSID}
+CONNECTOR_VALHALLA_ID=${VALHALLAID}
 SMTP_HOSTNAME=localhost
 ELASTIC_MEMORY_SIZE=4G
 END_DOT_ENV
@@ -337,6 +339,7 @@ connector_containers="${connector_containers} external-import/cyber-campaign-col
 connector_containers="${connector_containers} external-import/cryptolaemus"
 connector_containers="${connector_containers} external-import/urlhaus-recent-payloads"
 connector_containers="${connector_containers} external-import/urlhaus"
+connector_containers="${connector_containers} external-import/valhalla"
 
 for cdir in ${connector_containers}; do
     cd "${opencti_dir}/opencti-connectors/${cdir}"
