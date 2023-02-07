@@ -285,6 +285,7 @@ URLHAUSID="$(uuidgen -r | tr -d '\n' | tr '[:upper:]' '[:lower:]')"
 VALHALLAID="$(uuidgen -r | tr -d '\n' | tr '[:upper:]' '[:lower:]')"
 VXVAULTID="$(uuidgen -r | tr -d '\n' | tr '[:upper:]' '[:lower:]')"
 EXPORTPDFID="$(uuidgen -r | tr -d '\n' | tr '[:upper:]' '[:lower:]')"
+MWBAZAARID="$(uuidgen -r | tr -d '\n' | tr '[:upper:]' '[:lower:]')"
 
 cat > "${opencti_dir}/opencti-docker/.env" << END_DOT_ENV
 OPENCTI_ADMIN_EMAIL=${opencti_email}
@@ -315,6 +316,7 @@ CONNECTOR_URLHAUS_RECENTS_ID=${URLHAUSRECENTSID}
 CONNECTOR_URLHAUS_ID=${URLHAUSID}
 CONNECTOR_VALHALLA_ID=${VALHALLAID}
 CONNECTOR_VXVAULT_ID=${VXVAULTID}
+CONNECTOR_MALWARE_BAZAAR_ID=${MWBAZAARID}
 CONNECTOR_EXPORT_PDF_ID=${EXPORTPDFID}
 EXPORT_PDF_ADDRESS1=Test Service
 EXPORT_PDF_ADDRESS2=321 Evergreen Terrace
@@ -351,6 +353,7 @@ connector_containers="${connector_containers} external-import/urlhaus-recent-pay
 connector_containers="${connector_containers} external-import/urlhaus"
 connector_containers="${connector_containers} external-import/valhalla"
 connector_containers="${connector_containers} external-import/vxvault"
+connector_containers="${connector_containers} external-import/malwarebazaar-recent-additions"
 connector_containers="${connector_containers} internal-export-file/export-report-pdf"
 
 for cdir in ${connector_containers}; do
