@@ -327,6 +327,7 @@ connector_containers="${connector_containers} external-import/cve"
 connector_containers="${connector_containers} external-import/malpedia"
 connector_containers="${connector_containers} external-import/cybercrime-tracker"
 connector_containers="${connector_containers} external-import/misp-feed"
+connector_containers="${connector_containers} external-import/cyber-campaign-collection"
 
 for cdir in ${connector_containers}; do
     cd "${opencti_dir}/opencti-connectors/${cdir}"
