@@ -304,6 +304,7 @@ CONNECTOR_CCTRACKER_ID=${CCTRACKERID}
 CONNECTOR_MISP_FEED_BOTVRIJ_ID=${BOTVRIJID}
 CONNECTOR_MISP_FEED_CIRCL_ID=${CIRCLID}
 CONNECTOR_MISP_FEED_THREATFOX_ID=${THREATFOXID}
+CONNECTOR_CRYPTOLAEMUS_ID=${CRYPTOLAEMUSID}
 SMTP_HOSTNAME=localhost
 ELASTIC_MEMORY_SIZE=4G
 END_DOT_ENV
@@ -328,6 +329,7 @@ connector_containers="${connector_containers} external-import/malpedia"
 connector_containers="${connector_containers} external-import/cybercrime-tracker"
 connector_containers="${connector_containers} external-import/misp-feed"
 connector_containers="${connector_containers} external-import/cyber-campaign-collection"
+connector_containers="${connector_containers} external-import/cryptolaemus"
 
 for cdir in ${connector_containers}; do
     cd "${opencti_dir}/opencti-connectors/${cdir}"
