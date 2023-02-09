@@ -287,6 +287,7 @@ VXVAULTID="$(uuidgen -r | tr -d '\n' | tr '[:upper:]' '[:lower:]')"
 EXPORTPDFID="$(uuidgen -r | tr -d '\n' | tr '[:upper:]' '[:lower:]')"
 MWBAZAARID="$(uuidgen -r | tr -d '\n' | tr '[:upper:]' '[:lower:]')"
 SHODANINTERNETDBID="$(uuidgen -r | tr -d '\n' | tr '[:upper:]' '[:lower:]')"
+HYGIENEID="$(uuidgen -r | tr -d '\n' | tr '[:upper:]' '[:lower:]')"
 
 cat > "${opencti_dir}/opencti-docker/.env" << END_DOT_ENV
 OPENCTI_ADMIN_EMAIL=${opencti_email}
@@ -320,6 +321,7 @@ CONNECTOR_VXVAULT_ID=${VXVAULTID}
 CONNECTOR_MALWARE_BAZAAR_ID=${MWBAZAARID}
 CONNECTOR_EXPORT_PDF_ID=${EXPORTPDFID}
 CONNECTOR_SHODAN_INTERNETDB_ID=${SHODANINTERNETDBID}
+CONNECTOR_HYGIENE_ID=${HYGIENEID}
 EXPORT_PDF_ADDRESS1="Test Service"
 EXPORT_PDF_ADDRESS2="321 Evergreen Terrace"
 EXPORT_PDF_ADDRESS3="Springfield, OR 96201"
@@ -358,6 +360,7 @@ connector_containers="${connector_containers} external-import/vxvault"
 connector_containers="${connector_containers} external-import/malwarebazaar-recent-additions"
 connector_containers="${connector_containers} internal-export-file/export-report-pdf"
 connector_containers="${connector_containers} internal-enrichment/shodan-internetdb"
+connector_containers="${connector_containers} internal-enrichment/hygiene"
 
 # Make sure we set the connector HEAD to the desired release
 cd "${opencti_dir}/opencti-connectors"
