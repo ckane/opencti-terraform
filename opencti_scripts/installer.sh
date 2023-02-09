@@ -367,6 +367,7 @@ cd "${opencti_dir}/opencti-connectors"
 git checkout -b "rel${opencti_ver}" "${opencti_ver}"
 
 for cdir in ${connector_containers}; do
+    echo "### Building connector $(basename $cdir)"
     cd "${opencti_dir}/opencti-connectors/${cdir}"
     docker build -t "opencti/connector-$(basename $cdir):${opencti_ver}" .
 done
