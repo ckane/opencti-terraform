@@ -356,9 +356,13 @@ connector_containers="${connector_containers} external-import/vxvault"
 connector_containers="${connector_containers} external-import/malwarebazaar-recent-additions"
 connector_containers="${connector_containers} internal-export-file/export-report-pdf"
 
+# Make sure we set the connector HEAD to the desired release
+cd "${opencti_dir}/opencti-connectors"
+git checkout -b "rel${opencti_ver}" "${opencti_ver}"
+
 for cdir in ${connector_containers}; do
     cd "${opencti_dir}/opencti-connectors/${cdir}"
-    docker build -t "opencti/connector-$(basename $cdir):5.5.3" .
+    docker build -t "opencti/connector-$(basename $cdir):${opencti_ver}" .
 done
 
 echo "Starting Docker"
