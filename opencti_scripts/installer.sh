@@ -289,6 +289,7 @@ EXPORTPDFID="$(uuidgen -r | tr -d '\n' | tr '[:upper:]' '[:lower:]')"
 MWBAZAARID="$(uuidgen -r | tr -d '\n' | tr '[:upper:]' '[:lower:]')"
 SHODANINTERNETDBID="$(uuidgen -r | tr -d '\n' | tr '[:upper:]' '[:lower:]')"
 HYGIENEID="$(uuidgen -r | tr -d '\n' | tr '[:upper:]' '[:lower:]')"
+GOOGLEDNSID="$(uuidgen -r | tr -d '\n' | tr '[:upper:]' '[:lower:]')"
 
 cat > "${opencti_dir}/opencti-docker/.env" << END_DOT_ENV
 OPENCTI_ADMIN_EMAIL=${opencti_email}
@@ -325,6 +326,7 @@ CONNECTOR_MALWARE_BAZAAR_ID=${MWBAZAARID}
 CONNECTOR_EXPORT_PDF_ID=${EXPORTPDFID}
 CONNECTOR_SHODAN_INTERNETDB_ID=${SHODANINTERNETDBID}
 CONNECTOR_HYGIENE_ID=${HYGIENEID}
+CONNECTOR_GOOGLE_DNS_ID=${GOOGLEDNSID}
 EXPORT_PDF_ADDRESS1="Test Service"
 EXPORT_PDF_ADDRESS2="321 Evergreen Terrace"
 EXPORT_PDF_ADDRESS3="Springfield, OR 96201"
