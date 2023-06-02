@@ -265,7 +265,6 @@ echo "OpenCTI: Edit configs"
 ## Setting: .app.admin.password
 # RADMINPASS="opencti"
 RADMINPASS="$(openssl rand -base64 25 | tr -d '/')"
-MINIOPASS="$(openssl rand -base64 25 | tr -d '/')"
 RABBITPASS="$(openssl rand -base64 25 | tr -d '/')"
 ## Setting: .app.admin.token
 RADMINTOKEN="$(uuidgen -r | tr -d '\n' | tr '[:upper:]' '[:lower:]')"
@@ -294,8 +293,8 @@ OPENCTI_ADMIN_EMAIL=${opencti_email}
 OPENCTI_ADMIN_PASSWORD=${RADMINPASS}
 OPENCTI_ADMIN_TOKEN=${RADMINTOKEN}
 OPENCTI_BASE_URL=http://localhost:8080
-MINIO_ROOT_USER=opencti
-MINIO_ROOT_PASSWORD=${MINIOPASS}
+S3_ENDPOINT=s3.amazonaws.com
+S3_BUCKET=${storage_bucket}
 RABBITMQ_DEFAULT_USER=opencti
 RABBITMQ_DEFAULT_PASS=${RABBITPASS}
 CONNECTOR_EXPORT_FILE_STIX_ID=dd817c8b-abae-460a-9ebc-97b1551e70e6
