@@ -366,6 +366,9 @@ connector_containers="${connector_containers} external-import/malwarebazaar-rece
 connector_containers="${connector_containers} internal-export-file/export-report-pdf"
 connector_containers="${connector_containers} internal-enrichment/shodan-internetdb"
 connector_containers="${connector_containers} internal-enrichment/hygiene"
+connector_containers="${connector_containers} internal-enrichment/google-dns"
+connector_containers="${connector_containers} internal-enrichment/shodan"
+connector_containers="${connector_containers} internal-enrichment/greynoise"
 
 # Make sure we set the connector HEAD to the desired release
 cd "${opencti_dir}/opencti-connectors"
